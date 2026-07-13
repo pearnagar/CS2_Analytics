@@ -56,15 +56,15 @@ jobs:
           mkdir -p "$HOME/.kube"
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > "$HOME/.kube/config"
 
-      - name: Deploy with Helm
-        run: |
-          helm upgrade --install cs2-analytics ./charts/cs2-analytics \
-            --set api.image.repository=${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-api \
-            --set api.image.tag=${{ github.sha }} \
-            --set frontend.image.repository=${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-frontend \
-            --set frontend.image.tag=${{ github.sha }} \
-            --set scraper.image.repository=${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-scraper \
-            --set scraper.image.tag=${{ github.sha }} \
-            --set global.imagePullPolicy=IfNotPresent \
-            --atomic \
-            --timeout 5m
+      # - name: Deploy with Helm
+      #   run: |
+      #     helm upgrade --install cs2-analytics ./charts/cs2-analytics \
+      #       --set api.image.repository=${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-api \
+      #       --set api.image.tag=${{ github.sha }} \
+      #       --set frontend.image.repository=${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-frontend \
+      #       --set frontend.image.tag=${{ github.sha }} \
+      #       --set scraper.image.repository=${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-scraper \
+      #       --set scraper.image.tag=${{ github.sha }} \
+      #       --set global.imagePullPolicy=IfNotPresent \
+      #       --atomic \
+      #       --timeout 5m
