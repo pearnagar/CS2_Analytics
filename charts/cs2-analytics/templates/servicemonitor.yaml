@@ -1,0 +1,17 @@
+{{- if .Values.monitoring.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: cs2-api-servicemonitor
+  labels:
+    release: {{ .Values.monitoring.serviceMonitor.prometheusReleaseLabel }}
+spec:
+  selector:
+    matchLabels:
+      app: cs2-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      scrapeTimeout: {{ .Values.monitoring.serviceMonitor.scrapeTimeout }}
+{{- end }}

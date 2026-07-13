@@ -1,0 +1,71 @@
+global:
+  imagePullPolicy: Never
+
+postgres:
+  db: cs2_stats
+  user: admin
+  password: password123
+
+db:
+  image:
+    repository: postgres
+    tag: "15"
+  replicaCount: 1
+  storage: 1Gi
+
+scraper:
+  image:
+    repository: cs2_analytics-scraper
+    tag: latest
+  schedule: "*/10 * * * *"
+
+api:
+  image:
+    repository: cs2_analytics-api
+    tag: latest
+  replicaCount: 2
+  service:
+    port: 8000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+
+frontend:
+  image:
+    repository: cs2_analytics-frontend
+    tag: latest
+  replicaCount: 2
+  service:
+    nodePort: 30080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  hpa:
+    minReplicas: 2
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 50
+
+ingress:
+  enabled: true
+  frontendHost: pearnagar.com
+  apiHost: api.pearnagar.com
+  tlsSecretName: cs2-tls-secret
+
+monitoring:
+  serviceMonitor:
+    enabled: true
+    prometheusReleaseLabel: kube-prometheus-stack
+    interval: 15s
+    scrapeTimeout: 10s

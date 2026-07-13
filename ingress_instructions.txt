@@ -1,0 +1,21 @@
+CS2 Analytics — Enabling NGINX Ingress on Minikube
+====================================================
+
+1. Enable the ingress addon:
+     minikube addons enable ingress
+
+2. Wait for the ingress controller pod to be Running:
+     kubectl get pods -n ingress-nginx --watch
+   (Ctrl+C once ingress-nginx-controller-* shows STATUS = Running)
+
+3. Apply the manifests (in order — configmap/secret/tls first, then workloads, then ingress/hpa):
+     kubectl apply -f k8s/configmap.yaml -f k8s/secret.yaml -f k8s/tls-secret.yaml
+     kubectl apply -f k8s/db.yaml -f k8s/api.yaml -f k8s/scraper.yaml -f k8s/frontend.yaml
+     kubectl apply -f k8s/ingress.yaml -f k8s/hpa.yaml
+
+4. Confirm the Ingress picked up an address:
+     kubectl get ingress cs2-ingress
+
+5. Map the local domain to the Minikube IP (see /etc/hosts line in chat summary),
+   then browse to https://pearnagar.com and https://api.pearnagar.com/api/stats
+   (the browser will warn about the self-signed cert — that's expected for local dev).

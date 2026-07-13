@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cs2-db
+spec:
+  serviceName: cs2-db-service
+  replicas: {{ .Values.db.replicaCount }}
+  selector:
+    matchLabels:
+      app: cs2-db
+  template:
+    metadata:
+      labels:
+        app: cs2-db
+    spec:
+      containers:
+        - name: postgres
+          image: "{{ .Values.db.image.repository }}:{{ .Values.db.image.tag }}"
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: cs2-config
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                configMapKeyRef:
+                  name: cs2-config
+                  key: POSTGRES_USER
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cs2-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.postgres.user }}", "-d", "{{ .Values.postgres.db }}"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "{{ .Values.postgres.user }}", "-d", "{{ .Values.postgres.db }}"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 5
+  volumeClaimTemplates:
+    - metadata:
+        name: db-data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.db.storage }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cs2-db-service
+spec:
+  clusterIP: None
+  selector:
+    app: cs2-db
+  ports:
+    - port: 5432
+      targetPort: 5432

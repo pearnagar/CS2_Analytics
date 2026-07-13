@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cs2-scraper
+spec:
+  schedule: {{ .Values.scraper.schedule | quote }}
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      template:
+        spec:
+          containers:
+            - name: scraper
+              image: "{{ .Values.scraper.image.repository }}:{{ .Values.scraper.image.tag }}"
+              imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+              env:
+                - name: DB_HOST
+                  value: cs2-db-service
+                - name: DB_PORT
+                  value: "5432"
+                - name: DB_NAME
+                  valueFrom:
+                    configMapKeyRef:
+                      name: cs2-config
+                      key: POSTGRES_DB
+                - name: DB_USER
+                  valueFrom:
+                    configMapKeyRef:
+                      name: cs2-config
+                      key: POSTGRES_USER
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: cs2-secret
+                      key: POSTGRES_PASSWORD
+          restartPolicy: Never

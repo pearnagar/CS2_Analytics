@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:15
+    container_name: cs2_db
+    environment:
+      POSTGRES_DB: cs2_stats
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d cs2_stats"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  scraper:
+    build: ./scraper
+    container_name: cs2_scraper
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: cs2_stats
+      DB_USER: admin
+      DB_PASSWORD: password123
+
+  api:
+    build: ./api
+    container_name: cs2_api
+    depends_on:
+      db:
+        condition: service_healthy
+      scraper:
+        condition: service_completed_successfully
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: cs2_stats
+      DB_USER: admin
+      DB_PASSWORD: password123
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: cs2_frontend
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:

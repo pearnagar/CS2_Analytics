@@ -1,0 +1,34 @@
+CS2 Analytics — Installing kube-prometheus-stack
+==================================================
+
+1. Add the Prometheus community Helm repo:
+     helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+     helm repo update
+
+2. Install the stack (release name MUST be "kube-prometheus-stack" to match the
+   `release: kube-prometheus-stack` label on charts/cs2-analytics/templates/servicemonitor.yaml —
+   if you use a different release name, override monitoring.serviceMonitor.prometheusReleaseLabel
+   in values.yaml to match, since Prometheus Operator's serviceMonitorSelector keys off that label):
+     helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+       -n monitoring --create-namespace
+
+3. Verify all monitoring pods are Running:
+     kubectl get pods -n monitoring
+
+4. Deploy/upgrade the app chart so the ServiceMonitor is applied (it's part of
+   charts/cs2-analytics — Prometheus Operator picks it up automatically, no separate apply needed):
+     helm upgrade --install cs2-analytics ./charts/cs2-analytics
+
+5. Confirm Prometheus discovered the target:
+     kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+   Open http://localhost:9090/targets and look for "cs2-api-servicemonitor" — state should be UP.
+
+6. Access Grafana:
+     kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+   Open http://localhost:3000 — default login is admin / prom-operator
+   (check `kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d`
+   if that default was overridden).
+
+7. Import the dashboard: Dashboards > New > Import > Upload JSON file > grafana-dashboard.json
+   (queries request rate and p95 latency from the /metrics endpoint exposed by the API —
+   see api/main.py, instrumented via prometheus-fastapi-instrumentator).

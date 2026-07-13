@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>CS2 Analytics</title>
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    background: #0f1115;
+    color: #e6e6e6;
+    margin: 0;
+    padding: 2rem;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 {
+    color: #f2a900;
+    margin-bottom: 1rem;
+  }
+  .status {
+    min-height: 1.2rem;
+    margin-bottom: 0.75rem;
+  }
+  .status.error {
+    color: #ff5c5c;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #1a1d24;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+  th, td {
+    padding: 0.6rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid #2a2e37;
+  }
+  th {
+    background: #20242c;
+    color: #f2a900;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+  }
+  tr:hover td {
+    background: #23272f;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>CS2 Player Stats</h1>
+  <div id="status" class="status"></div>
+  <table id="stats-table">
+    <thead>
+      <tr>
+        <th>Player</th>
+        <th>Matches</th>
+        <th>Kills</th>
+        <th>Deaths</th>
+        <th>K/D</th>
+      </tr>
+    </thead>
+    <tbody id="stats-body"></tbody>
+  </table>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
