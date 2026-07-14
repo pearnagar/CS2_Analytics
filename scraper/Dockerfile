@@ -2,6 +2,9 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# hadolint ignore=DL3013
+RUN pip install --no-cache-dir --upgrade pip setuptools "wheel>=0.46.2" "jaraco.context>=6.1.0"
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
