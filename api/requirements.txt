@@ -4,3 +4,5 @@ psycopg2-binary==2.9.9
 prometheus-fastapi-instrumentator==7.0.0
 prometheus-client==0.20.0
 slowapi==0.1.9
+jaraco.context>=6.1.0
+wheel>=0.46.2
