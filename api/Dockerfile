@@ -4,10 +4,15 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-# Install dependencies, then immediately remove build tools to eliminate 
-# their vendored vulnerabilities from the final image attack surface.
+# Install dependencies, then forcefully nuke the build tools and their METADATA
+# to ensure Trivy doesn't trip on orphaned .dist-info directories.
 RUN pip install --no-cache-dir -r requirements.txt \
-    && pip uninstall -y pip setuptools wheel
+    && rm -rf /usr/local/lib/python3.11/site-packages/pip \
+    && rm -rf /usr/local/lib/python3.11/site-packages/pip-* \
+    && rm -rf /usr/local/lib/python3.11/site-packages/setuptools \
+    && rm -rf /usr/local/lib/python3.11/site-packages/setuptools-* \
+    && rm -rf /usr/local/lib/python3.11/site-packages/wheel \
+    && rm -rf /usr/local/lib/python3.11/site-packages/wheel-*
 
 COPY main.py .
 
