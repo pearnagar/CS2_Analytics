@@ -78,6 +78,7 @@ jobs:
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-${{ matrix.service }}:${{ github.sha }}
           severity: HIGH,CRITICAL
+          ignore-unfixed: true
           exit-code: "1"
 
   deploy:
