@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+# SRE Best Practice: Explicitly define least-privilege permissions for the GITHUB_TOKEN.
+# By default, GitHub tokens have broad write access. We are locking this down 
+# so the pipeline can only read the repository code and nothing else.
+permissions:
+  contents: read
+
 env:
   DOCKERHUB_NAMESPACE: ${{ secrets.DOCKERHUB_USERNAME }}
 
@@ -67,7 +73,8 @@ jobs:
             ${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-${{ matrix.service }}:latest
 
       - name: Scan ${{ matrix.service }} image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        # FIXED: Updated to a safe, modern release tag to avoid the deleted/compromised 0.28.0 version.
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           image-ref: ${{ env.DOCKERHUB_NAMESPACE }}/cs2-analytics-${{ matrix.service }}:${{ github.sha }}
           severity: HIGH,CRITICAL
