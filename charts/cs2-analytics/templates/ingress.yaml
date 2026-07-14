@@ -12,6 +12,9 @@ spec:
     - hosts:
         - {{ .Values.ingress.frontendHost }}
         - {{ .Values.ingress.apiHost }}
+        - {{ .Values.monitoring.ingress.grafanaHost }}
+        - {{ .Values.monitoring.ingress.prometheusHost }}
+        - {{ .Values.monitoring.ingress.alertsHost }}
       secretName: {{ .Values.ingress.tlsSecretName }}
   rules:
     - host: {{ .Values.ingress.frontendHost }}
@@ -34,4 +37,34 @@ spec:
                 name: cs2-api-service
                 port:
                   number: {{ .Values.api.service.port }}
+    - host: {{ .Values.monitoring.ingress.grafanaHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.monitoring.ingress.grafanaService.name }}
+                port:
+                  number: {{ .Values.monitoring.ingress.grafanaService.port }}
+    - host: {{ .Values.monitoring.ingress.prometheusHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.monitoring.ingress.prometheusService.name }}
+                port:
+                  number: {{ .Values.monitoring.ingress.prometheusService.port }}
+    - host: {{ .Values.monitoring.ingress.alertsHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.monitoring.ingress.alertmanagerService.name }}
+                port:
+                  number: {{ .Values.monitoring.ingress.alertmanagerService.port }}
 {{- end }}

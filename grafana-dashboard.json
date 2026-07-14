@@ -1,18 +1,47 @@
 {
-  "title": "CS2 Analytics API",
+  "title": "CS2 Market Watch",
   "uid": "cs2-analytics-api",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "timezone": "browser",
-  "time": { "from": "now-1h", "to": "now" },
-  "refresh": "15s",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
   "panels": [
     {
-      "id": 1,
-      "title": "Request rate (req/s)",
+      "id": 4,
+      "title": "Steam Market — lowest price (USD)",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
+      "targets": [
+        {
+          "expr": "cs2_market_lowest_price_usd",
+          "legendFormat": "{{item_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Steam Market — sell listing volume",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "cs2_market_volume",
+          "legendFormat": "{{item_name}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "title": "API request rate (req/s)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 9 },
       "targets": [
         {
           "expr": "sum(rate(http_requests_total{job=\"cs2-api-service\"}[5m])) by (handler)",
@@ -23,10 +52,10 @@
     },
     {
       "id": 2,
-      "title": "p95 request latency (s)",
+      "title": "API p95 request latency (s)",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 9 },
       "targets": [
         {
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"cs2-api-service\"}[5m])) by (le, handler))",
@@ -37,10 +66,10 @@
     },
     {
       "id": 3,
-      "title": "Error rate (5xx / total)",
+      "title": "API error rate (5xx / total)",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 17 },
       "targets": [
         {
           "expr": "sum(rate(http_requests_total{job=\"cs2-api-service\", status=~\"5..\"}[5m])) / sum(rate(http_requests_total{job=\"cs2-api-service\"}[5m]))",

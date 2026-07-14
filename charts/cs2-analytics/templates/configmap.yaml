@@ -5,3 +5,4 @@ metadata:
 data:
   POSTGRES_DB: {{ .Values.postgres.db | quote }}
   POSTGRES_USER: {{ .Values.postgres.user | quote }}
+  MARKET_ITEMS: {{ .Values.scraper.marketItems | join "," | quote }}

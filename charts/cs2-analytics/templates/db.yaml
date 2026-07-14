@@ -13,11 +13,21 @@ spec:
       labels:
         app: cs2-db
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        fsGroup: 999
       containers:
         - name: postgres
           image: "{{ .Values.db.image.repository }}:{{ .Values.db.image.tag }}"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 5432
+          resources:
+            {{- toYaml .Values.db.resources | nindent 12 }}
           env:
             - name: POSTGRES_DB
               valueFrom:

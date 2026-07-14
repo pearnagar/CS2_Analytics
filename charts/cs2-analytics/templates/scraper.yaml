@@ -5,18 +5,34 @@ metadata:
 spec:
   schedule: {{ .Values.scraper.schedule | quote }}
   concurrencyPolicy: Forbid
-  successfulJobsHistoryLimit: 3
-  failedJobsHistoryLimit: 3
+  successfulJobsHistoryLimit: {{ .Values.scraper.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.scraper.failedJobsHistoryLimit }}
   jobTemplate:
     spec:
       backoffLimit: 3
+      activeDeadlineSeconds: {{ .Values.scraper.activeDeadlineSeconds }}
       template:
         spec:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
           containers:
             - name: scraper
               image: "{{ .Values.scraper.image.repository }}:{{ .Values.scraper.image.tag }}"
               imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                {{- toYaml .Values.scraper.resources | nindent 16 }}
               env:
+                - name: PYTHONDONTWRITEBYTECODE
+                  value: "1"
                 - name: DB_HOST
                   value: cs2-db-service
                 - name: DB_PORT
@@ -36,4 +52,12 @@ spec:
                     secretKeyRef:
                       name: cs2-secret
                       key: POSTGRES_PASSWORD
+                - name: MARKET_ITEMS
+                  valueFrom:
+                    configMapKeyRef:
+                      name: cs2-config
+                      key: MARKET_ITEMS
+          volumes:
+            - name: tmp
+              emptyDir: {}
           restartPolicy: Never

@@ -8,14 +8,23 @@ CS2 Analytics — Enabling NGINX Ingress on Minikube
      kubectl get pods -n ingress-nginx --watch
    (Ctrl+C once ingress-nginx-controller-* shows STATUS = Running)
 
-3. Apply the manifests (in order — configmap/secret/tls first, then workloads, then ingress/hpa):
-     kubectl apply -f k8s/configmap.yaml -f k8s/secret.yaml -f k8s/tls-secret.yaml
-     kubectl apply -f k8s/db.yaml -f k8s/api.yaml -f k8s/scraper.yaml -f k8s/frontend.yaml
-     kubectl apply -f k8s/ingress.yaml -f k8s/hpa.yaml
+3. Deploy the whole stack via Helm (this is now the only deploy path — the old
+   standalone k8s/ manifests were retired once the chart at charts/cs2-analytics/
+   took over):
+     helm upgrade --install cs2-analytics ./charts/cs2-analytics
 
 4. Confirm the Ingress picked up an address:
      kubectl get ingress cs2-ingress
 
-5. Map the local domain to the Minikube IP (see /etc/hosts line in chat summary),
-   then browse to https://pearnagar.com and https://api.pearnagar.com/api/stats
-   (the browser will warn about the self-signed cert — that's expected for local dev).
+5. No hosts-file editing needed. The ingress hostnames in values.yaml are sslip.io
+   addresses (e.g. cs2.192-168-49-2.sslip.io) that encode the Minikube IP directly
+   and resolve automatically over public DNS — just browse to
+   https://cs2.192-168-49-2.sslip.io and https://api.192-168-49-2.sslip.io/api/stats
+   (the browser will warn about the self-signed cert — expected for local dev;
+   see the mkcert note below to remove that warning too).
+
+   If your Minikube IP isn't 192.168.49.2, run `minikube ip` and update
+   ingress.frontendHost / ingress.apiHost / monitoring.ingress.*Host in
+   charts/cs2-analytics/values.yaml to match (replace dots with dashes in the IP),
+   then regenerate charts/cs2-analytics/templates/tls-secret.yaml with a cert
+   whose SAN list covers the new hostnames before re-running the helm upgrade.

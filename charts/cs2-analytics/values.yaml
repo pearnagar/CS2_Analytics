@@ -6,18 +6,44 @@ postgres:
   user: admin
   password: password123
 
+security:
+  apiKey: change-me-please-override-this-value
+
 db:
   image:
     repository: postgres
     tag: "15"
   replicaCount: 1
   storage: 1Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 scraper:
   image:
     repository: cs2_analytics-scraper
     tag: latest
   schedule: "*/10 * * * *"
+  activeDeadlineSeconds: 300
+  successfulJobsHistoryLimit: 10
+  failedJobsHistoryLimit: 10
+  marketItems:
+    - "AK-47 | Redline (Field-Tested)"
+    - "AWP | Asiimov (Field-Tested)"
+    - "M4A4 | Asiimov (Field-Tested)"
+    - "Desert Eagle | Blaze (Factory New)"
+    - "Glock-18 | Fade (Factory New)"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
 
 api:
   image:
@@ -59,13 +85,33 @@ frontend:
 
 ingress:
   enabled: true
-  frontendHost: pearnagar.com
-  apiHost: api.pearnagar.com
+  frontendHost: cs2.192-168-49-2.sslip.io
+  apiHost: api.192-168-49-2.sslip.io
   tlsSecretName: cs2-tls-secret
 
 monitoring:
   serviceMonitor:
     enabled: true
-    prometheusReleaseLabel: kube-prometheus-stack
+    prometheusReleaseLabel: prometheus
     interval: 15s
     scrapeTimeout: 10s
+  ingress:
+    grafanaHost: grafana.192-168-49-2.sslip.io
+    grafanaService:
+      name: prometheus-grafana
+      port: 80
+    prometheusHost: prometheus.192-168-49-2.sslip.io
+    prometheusService:
+      name: prometheus-kube-prometheus-prometheus
+      port: 9090
+    alertsHost: alerts.192-168-49-2.sslip.io
+    alertmanagerService:
+      name: prometheus-kube-prometheus-alertmanager
+      port: 9093
+  alerts:
+    enabled: true
+    apiErrorRateThreshold: 0.05
+    podRestartThreshold: 3
+    podRestartWindow: 15m
+    slackWebhookUrl: "https://hooks.slack.com/services/REPLACE/ME/WITH_REAL_WEBHOOK"
+    slackChannel: "#cs2-analytics-alerts"

@@ -5,29 +5,35 @@ CS2 Analytics — Installing kube-prometheus-stack
      helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
      helm repo update
 
-2. Install the stack (release name MUST be "kube-prometheus-stack" to match the
-   `release: kube-prometheus-stack` label on charts/cs2-analytics/templates/servicemonitor.yaml —
+2. Install the stack (release name MUST be "prometheus" to match the
+   `release: prometheus` label on charts/cs2-analytics/templates/servicemonitor.yaml —
    if you use a different release name, override monitoring.serviceMonitor.prometheusReleaseLabel
    in values.yaml to match, since Prometheus Operator's serviceMonitorSelector keys off that label):
-     helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+     helm install prometheus prometheus-community/kube-prometheus-stack \
        -n monitoring --create-namespace
 
 3. Verify all monitoring pods are Running:
      kubectl get pods -n monitoring
 
-4. Deploy/upgrade the app chart so the ServiceMonitor is applied (it's part of
-   charts/cs2-analytics — Prometheus Operator picks it up automatically, no separate apply needed):
+4. Deploy/upgrade the app chart so the ServiceMonitor and Ingress rules are applied
+   (charts/cs2-analytics — Prometheus Operator picks the ServiceMonitor up automatically,
+   no separate apply needed; the Ingress also now routes grafana./prometheus./alerts.<ip>.sslip.io
+   to the prometheus-grafana, prometheus-kube-prometheus-prometheus, and
+   prometheus-kube-prometheus-alertmanager services on ports 80/9090/9093 — no hosts-file
+   editing required, see ingress_instructions.txt for how the sslip.io hostnames work):
      helm upgrade --install cs2-analytics ./charts/cs2-analytics
 
 5. Confirm Prometheus discovered the target:
-     kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+     kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
    Open http://localhost:9090/targets and look for "cs2-api-servicemonitor" — state should be UP.
+   (Or, once the Ingress is applied, just browse https://prometheus.192-168-49-2.sslip.io/targets
+   directly — swap in your actual Minikube IP if different.)
 
 6. Access Grafana:
-     kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+     kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
    Open http://localhost:3000 — default login is admin / prom-operator
-   (check `kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d`
-   if that default was overridden).
+   (check `kubectl get secret -n monitoring prometheus-grafana -o jsonpath="{.data.admin-password}" | base64 -d`
+   if that default was overridden). Or browse https://grafana.192-168-49-2.sslip.io once the Ingress is live.
 
 7. Import the dashboard: Dashboards > New > Import > Upload JSON file > grafana-dashboard.json
    (queries request rate and p95 latency from the /metrics endpoint exposed by the API —

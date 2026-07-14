@@ -1,0 +1,146 @@
+{{- if .Values.monitoring.alerts.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cs2-platform-overview-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  cs2-platform-overview.json: |
+    {
+      "title": "CS2 Platform Overview",
+      "uid": "cs2-platform-overview",
+      "schemaVersion": 39,
+      "version": 1,
+      "timezone": "browser",
+      "time": { "from": "now-6h", "to": "now" },
+      "refresh": "30s",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Row 1 — Business: Steam Market lowest price (USD)",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "collapsed": false
+        },
+        {
+          "id": 2,
+          "title": "Steam Market — lowest price by item",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 1 },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "cs2_market_lowest_price_usd",
+              "legendFormat": "{{ "{{" }}item_name{{ "}}" }}",
+              "refId": "A"
+            }
+          ],
+          "description": "Sourced from cs2-api's custom Prometheus collector, which reads market_data on every /metrics scrape — no direct Postgres datasource is configured in this Grafana instance."
+        },
+        {
+          "id": 3,
+          "title": "Row 2 — Infra Health: CPU / Memory",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 },
+          "collapsed": false
+        },
+        {
+          "id": 4,
+          "title": "CPU usage by pod",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 10 },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"default\", pod=~\"cs2-(scraper|api|db).*\", container!=\"\", container!=\"POD\"}[5m])) by (pod)",
+              "legendFormat": "{{ "{{" }}pod{{ "}}" }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "Memory usage (working set) by pod",
+          "type": "timeseries",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 10 },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"default\", pod=~\"cs2-(scraper|api|db).*\", container!=\"\", container!=\"POD\"}) by (pod)",
+              "legendFormat": "{{ "{{" }}pod{{ "}}" }}",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Row 3 — Job Status: cs2-scraper CronJob history",
+          "type": "row",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+          "collapsed": false
+        },
+        {
+          "id": 7,
+          "title": "Scraper runs succeeded (retained history)",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 6, "w": 6, "x": 0, "y": 19 },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+          "targets": [
+            { "expr": "sum(kube_job_status_succeeded{namespace=\"default\", job_name=~\"cs2-scraper-.*\"})", "refId": "A" }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Scraper runs failed (retained history)",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 6, "w": 6, "x": 6, "y": 19 },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+          "targets": [
+            { "expr": "sum(kube_job_status_failed{namespace=\"default\", job_name=~\"cs2-scraper-.*\"})", "refId": "A" }
+          ]
+        },
+        {
+          "id": 9,
+          "title": "Success rate (retained history)",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 6, "w": 6, "x": 12, "y": 19 },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "color": { "mode": "thresholds" },
+              "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.5 }, { "color": "green", "value": 0.9 }] }
+            },
+            "overrides": []
+          },
+          "targets": [
+            {
+              "expr": "sum(kube_job_status_succeeded{namespace=\"default\", job_name=~\"cs2-scraper-.*\"}) / (sum(kube_job_status_succeeded{namespace=\"default\", job_name=~\"cs2-scraper-.*\"}) + sum(kube_job_status_failed{namespace=\"default\", job_name=~\"cs2-scraper-.*\"}))",
+              "refId": "A"
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "title": "Active scraper runs right now",
+          "type": "stat",
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "gridPos": { "h": 6, "w": 6, "x": 18, "y": 19 },
+          "targets": [
+            { "expr": "sum(kube_job_status_active{namespace=\"default\", job_name=~\"cs2-scraper-.*\"})", "refId": "A" }
+          ]
+        }
+      ],
+      "templating": {
+        "list": [
+          { "name": "datasource", "type": "datasource", "query": "prometheus", "current": {} }
+        ]
+      }
+    }
+{{- end }}

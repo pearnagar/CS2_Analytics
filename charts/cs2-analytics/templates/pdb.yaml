@@ -1,0 +1,29 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cs2-api-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cs2-api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cs2-frontend-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cs2-frontend
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cs2-db-pdb
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: cs2-db

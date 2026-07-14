@@ -2,40 +2,98 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>CS2 Analytics</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CS2 Market Watch</title>
 <style>
+  * { box-sizing: border-box; }
   body {
     font-family: -apple-system, Segoe UI, Roboto, sans-serif;
     background: #0f1115;
     color: #e6e6e6;
     margin: 0;
-    padding: 2rem;
+    padding: 1.5rem;
   }
   .container {
-    max-width: 720px;
+    max-width: 900px;
     margin: 0 auto;
+  }
+  .header-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
   }
   h1 {
     color: #f2a900;
-    margin-bottom: 1rem;
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  .last-updated {
+    color: #8a8f98;
+    font-size: 0.8rem;
+  }
+  .controls {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  #filter-input {
+    flex: 1;
+    min-width: 160px;
+    background: #1a1d24;
+    border: 1px solid #2a2e37;
+    color: #e6e6e6;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  #filter-input:focus {
+    outline: 1px solid #f2a900;
+  }
+  button {
+    background: #1a1d24;
+    border: 1px solid #2a2e37;
+    color: #e6e6e6;
+    padding: 0.5rem 0.9rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  button:hover {
+    border-color: #f2a900;
+    color: #f2a900;
   }
   .status {
     min-height: 1.2rem;
     margin-bottom: 0.75rem;
+    font-size: 0.9rem;
   }
   .status.error {
     color: #ff5c5c;
   }
+  .status.loading {
+    color: #8a8f98;
+  }
+  .table-wrapper {
+    overflow-x: auto;
+    background: #1a1d24;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+  }
   table {
     width: 100%;
     border-collapse: collapse;
-    background: #1a1d24;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    min-width: 480px;
   }
   th, td {
     padding: 0.6rem 0.9rem;
     text-align: left;
     border-bottom: 1px solid #2a2e37;
+    white-space: nowrap;
   }
   th {
     background: #20242c;
@@ -43,28 +101,50 @@
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: none;
+  }
+  th:hover {
+    color: #ffcf5c;
+  }
+  th .sort-arrow {
+    opacity: 0.6;
+    margin-left: 0.25rem;
   }
   tr:hover td {
     background: #23272f;
+  }
+  .empty-state {
+    padding: 2rem;
+    text-align: center;
+    color: #8a8f98;
   }
 </style>
 </head>
 <body>
 <div class="container">
-  <h1>CS2 Player Stats</h1>
-  <div id="status" class="status"></div>
-  <table id="stats-table">
-    <thead>
-      <tr>
-        <th>Player</th>
-        <th>Matches</th>
-        <th>Kills</th>
-        <th>Deaths</th>
-        <th>K/D</th>
-      </tr>
-    </thead>
-    <tbody id="stats-body"></tbody>
-  </table>
+  <div class="header-row">
+    <h1>CS2 Market Watch</h1>
+    <span id="last-updated" class="last-updated"></span>
+  </div>
+  <div class="controls">
+    <input id="filter-input" type="text" placeholder="Filter by item name..." autocomplete="off" />
+    <button id="refresh-button" type="button">Refresh</button>
+  </div>
+  <div id="status" class="status" role="status" aria-live="polite"></div>
+  <div class="table-wrapper">
+    <table id="stats-table">
+      <thead>
+        <tr>
+          <th data-key="item_name">Item<span class="sort-arrow"></span></th>
+          <th data-key="lowest_price">Lowest Price<span class="sort-arrow"></span></th>
+          <th data-key="volume">Volume<span class="sort-arrow"></span></th>
+          <th data-key="scraped_at">Scraped At<span class="sort-arrow"></span></th>
+        </tr>
+      </thead>
+      <tbody id="stats-body"></tbody>
+    </table>
+  </div>
 </div>
 <script src="app.js"></script>
 </body>

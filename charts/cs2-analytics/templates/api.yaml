@@ -12,13 +12,32 @@ spec:
       labels:
         app: cs2-api
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: cs2-api
+                topologyKey: kubernetes.io/hostname
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: api
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8000
           env:
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
             - name: DB_HOST
               value: cs2-db-service
             - name: DB_PORT
@@ -38,11 +57,21 @@ spec:
                 secretKeyRef:
                   name: cs2-secret
                   key: POSTGRES_PASSWORD
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: cs2-secret
+                  key: API_KEY
+            - name: ALLOWED_ORIGINS
+              value: "https://{{ .Values.ingress.frontendHost }},https://{{ .Values.ingress.apiHost }}"
           resources:
             {{- toYaml .Values.api.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           readinessProbe:
             httpGet:
-              path: /api/stats
+              path: /readyz
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
@@ -50,12 +79,15 @@ spec:
             failureThreshold: 3
           livenessProbe:
             httpGet:
-              path: /api/stats
+              path: /healthz
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 15
             timeoutSeconds: 3
             failureThreshold: 3
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

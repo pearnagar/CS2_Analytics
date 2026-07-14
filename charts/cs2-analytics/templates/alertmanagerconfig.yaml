@@ -1,0 +1,44 @@
+{{- if .Values.monitoring.alerts.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cs2-alertmanager-slack
+type: Opaque
+stringData:
+  webhook-url: {{ .Values.monitoring.alerts.slackWebhookUrl | quote }}
+---
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: cs2-analytics-routes
+  labels:
+    release: {{ .Values.monitoring.serviceMonitor.prometheusReleaseLabel }}
+spec:
+  route:
+    groupBy: ["namespace", "severity"]
+    groupWait: 30s
+    groupInterval: 5m
+    repeatInterval: 4h
+    receiver: cs2-slack-notifications
+    routes:
+      - matchers:
+          - name: severity
+            value: critical
+        receiver: cs2-slack-notifications
+        groupWait: 10s
+        repeatInterval: 1h
+      - matchers:
+          - name: severity
+            value: warning
+        receiver: cs2-slack-notifications
+  receivers:
+    - name: cs2-slack-notifications
+      slackConfigs:
+        - apiURL:
+            name: cs2-alertmanager-slack
+            key: webhook-url
+          channel: {{ .Values.monitoring.alerts.slackChannel | quote }}
+          sendResolved: true
+          title: '{{ `{{ .CommonAnnotations.summary }}` }}'
+          text: '{{ `{{ .CommonAnnotations.description }}` }}'
+{{- end }}

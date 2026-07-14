@@ -1,0 +1,66 @@
+{{- if .Values.monitoring.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cs2-analytics-rules
+  labels:
+    release: {{ .Values.monitoring.serviceMonitor.prometheusReleaseLabel }}
+spec:
+  groups:
+    - name: cs2-analytics.rules
+      rules:
+        - alert: ScraperJobFailed
+          expr: kube_job_status_failed{namespace="{{ .Release.Namespace }}", job_name=~"cs2-scraper-.*"} == 1
+          for: 1m
+          labels:
+            severity: warning
+            namespace: {{ .Release.Namespace }}
+          annotations:
+            summary: "cs2-scraper job {{`{{ $labels.job_name }}`}} failed"
+            description: >-
+              A cs2-scraper CronJob run failed. This covers both application-level errors and
+              activeDeadlineSeconds timeouts, since Kubernetes marks deadline-exceeded Jobs as
+              Failed too — kube_job_status_failed doesn't distinguish the reason. Resolves
+              automatically once this Job object ages out of failedJobsHistoryLimit.
+
+        - alert: HighApiErrorRate
+          expr: >-
+            sum(rate(http_requests_total{job="cs2-api-service", status=~"5.."}[5m]))
+            /
+            sum(rate(http_requests_total{job="cs2-api-service"}[5m])) > {{ .Values.monitoring.alerts.apiErrorRateThreshold }}
+          for: 5m
+          labels:
+            severity: critical
+            namespace: {{ .Release.Namespace }}
+          annotations:
+            summary: "cs2-api 5xx error rate above {{ .Values.monitoring.alerts.apiErrorRateThreshold }}"
+            description: "More than {{ mulf .Values.monitoring.alerts.apiErrorRateThreshold 100 }}% of cs2-api requests have returned 5xx over the last 5 minutes."
+
+        - alert: DatabaseDown
+          expr: >-
+            (kube_pod_status_ready{namespace="{{ .Release.Namespace }}", pod="cs2-db-0", condition="true"} == 0)
+            or
+            (absent(kube_pod_status_ready{namespace="{{ .Release.Namespace }}", pod="cs2-db-0", condition="true"}))
+          for: 2m
+          labels:
+            severity: critical
+            namespace: {{ .Release.Namespace }}
+          annotations:
+            summary: "cs2-db-0 is not Ready"
+            description: >-
+              The cs2-db-0 Postgres pod has not reported Ready for 2+ minutes (its readiness
+              probe runs pg_isready), or the pod is missing entirely. No dedicated
+              postgres_exporter is deployed in this cluster, so this is a Kubernetes-level
+              readiness signal, not internal Postgres metrics (connections, replication, etc.).
+
+        - alert: PodCrashLooping
+          expr: >-
+            increase(kube_pod_container_status_restarts_total{namespace="{{ .Release.Namespace }}", pod=~"cs2-(api|frontend|db|scraper).*"}[{{ .Values.monitoring.alerts.podRestartWindow }}]) > {{ .Values.monitoring.alerts.podRestartThreshold }}
+          for: 0m
+          labels:
+            severity: warning
+            namespace: {{ .Release.Namespace }}
+          annotations:
+            summary: "Pod {{`{{ $labels.pod }}`}} is crash-looping"
+            description: "Container {{`{{ $labels.container }}`}} in pod {{`{{ $labels.pod }}`}} restarted more than {{ .Values.monitoring.alerts.podRestartThreshold }} times in the last {{ .Values.monitoring.alerts.podRestartWindow }}."
+{{- end }}
