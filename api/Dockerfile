@@ -2,12 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Upgrade core tools and patch the vulnerable transitive dependencies flagged by Trivy
-# hadolint ignore=DL3013
-RUN pip install --no-cache-dir --upgrade pip setuptools "wheel>=0.46.2" "jaraco.context>=6.1.0"
-
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+
+# Install dependencies, then immediately remove build tools to eliminate 
+# their vendored vulnerabilities from the final image attack surface.
+RUN pip install --no-cache-dir -r requirements.txt \
+    && pip uninstall -y pip setuptools wheel
 
 COPY main.py .
 
